@@ -25,3 +25,14 @@ A modularized repository for building and exploring Large Language Models from s
 1. Prepare your data in `data/`.
 2. Implement your tokenizer in `tokenization/`.
 3. Build the transformer blocks in `transformer/`.
+
+
+What your blog should explicitly say (important)
+
+You must state this clearly:
+
+“The tokenizer defines what units exist.
+The embedding model learns how those units relate.”
+
+BPE ≠ semantics
+Embeddings = semantics
