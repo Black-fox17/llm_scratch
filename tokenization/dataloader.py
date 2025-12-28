@@ -1,8 +1,8 @@
 from datasets import load_dataset
 import unicodedata
 
-def get_wikitext_dataset():
-    return load_dataset("Salesforce/wikitext", "wikitext-2-raw-v1")
+def get_dataset():
+    return load_dataset("roneneldan/TinyStories")
 
 def clean_wikitext(text):
     text = text.replace("@-@", "-")
