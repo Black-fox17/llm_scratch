@@ -16,19 +16,15 @@ def visualize_embeddings(W_in, tokenizer, save_path="word_embeddings.png"):
     """
     print(f"Generating visualization: {save_path}")
     
-    # Ensure CPU numpy array
     if hasattr(W_in, 'cpu'):
         embeddings_cpu = W_in.cpu().detach().numpy()
     else:
         embeddings_cpu = W_in
     
-    # Reduce dimensions
-    # We use TruncatedSVD (similar to PCA) to flatten 10D/300D -> 2D
     svd = TruncatedSVD(n_components=2)
     try:
         W1_dec = svd.fit_transform(embeddings_cpu)
     except ValueError:
-        # Fallback if vocab is too small for SVD n=2
         print("Vocab too small for SVD, using first 2 dims")
         W1_dec = embeddings_cpu[:, :2]
 
@@ -38,8 +34,6 @@ def visualize_embeddings(W_in, tokenizer, save_path="word_embeddings.png"):
     plt.figure(figsize=(10, 8))
     sns.scatterplot(x=x, y=y)
 
-    # Add labels
-    # Iterate through vocab to label points
     for i in range(len(x)):
         if i in tokenizer.id2word:
             word = tokenizer.id2word[i]
