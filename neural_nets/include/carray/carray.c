@@ -1,4 +1,15 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "carray.h"
+
+
+typedef enum{
+    OP_ADD,
+    OP_SUB,
+    OP_MUL,
+    OP_DIV
+} Operation;
 
 void carray_compute_strides(carray *a) {
     a->strides[a->ndim - 1] = 1;
@@ -7,19 +18,21 @@ void carray_compute_strides(carray *a) {
     }
 }
 
-size_t carray_compute_size(size_t ndim, const size_t *shape) {
+size_t carray_compute_size(size_t ndim, size_t *shape) {
     size_t s = 1;
     for (size_t i = 0; i < ndim; i++)
         s *= shape[i];
     return s;
 }
-static carray init_carray_with_data(void *data, size_t shape, size_t ndim, bool owns) {
+static carray init_carray_with_data(void *data, size_t *shape, size_t ndim, bool owns) {
     carray a;
     a.data = data;
-    a.shape = malloc(sizeof(size_t) * ndim);
     a.ndim = ndim;
     a.owns = owns;
-    memcpy(a.shape, shape, sizeof(size_t) * ndim);
+    for (size_t i = 0; i < ndim; i++) {
+        a.shape[i] = shape[i];
+    }
+    a.size = carray_compute_size(ndim, shape);
     carray_compute_strides(&a);
     return a;
 }
@@ -31,19 +44,23 @@ carray init_carray_with_scalar_value(size_t *shape, size_t ndim, float value) {
         data[i] = value;
     return init_carray_with_data(data, shape, ndim, true);
 }
-carray init_carray_with_zeros(size_t shape, size_t ndim) {
+carray init_carray_with_zeros(size_t *shape, size_t ndim) {
     return init_carray_with_scalar_value(shape, ndim, 0.0);
 }
-carray init_carray_with_ones(size_t shape, size_t ndim) {
+carray init_carray_with_ones(size_t *shape, size_t ndim) {
     return init_carray_with_scalar_value(shape, ndim, 1.0);
 }
 
-carray arange(size_t shape, size_t ndim) {
+carray arange(size_t *shape, size_t ndim) {
     size_t size = carray_compute_size(ndim, shape);
     float *data = malloc(sizeof(float) * size);
     for (size_t i = 0; i < size; i++)
         data[i] = i;
     return init_carray_with_data(data, shape, ndim, true);
+}
+
+void carray_binary_op(carray *a, carray *b, carray *out, Operation op) {
+    
 }
 void carray_print(carray *arr) {
     if (arr->ndim == 1) {
@@ -102,11 +119,11 @@ void carray_print(carray *arr) {
         printf("]\n");
         return;
     }
-    printf("[");
-    for (size_t i = 0; i < arr->shape[0]; i++) {
-      size_t cur_offset = offset + (arr->strides[cur_depth] * i);
-      _printers[arr->dtype](arr->data, cur_offset);
-    }
-    printf("]");
-    return;
+    // printf("[");
+    // for (size_t i = 0; i < arr->shape[0]; i++) {
+    //   size_t cur_offset = offset + (arr->strides[cur_depth] * i);
+    //   _printers[arr->dtype](arr->data, cur_offset);
+    // }
+    // printf("]");
+    // return;
 }

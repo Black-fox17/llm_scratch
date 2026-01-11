@@ -17,13 +17,19 @@ typedef struct {
 } carray;
 
 
-carray init_carray(void *data, size_t shape, size_t ndim, bool owns);
+carray init_carray(void *data, size_t *shape, size_t ndim, bool owns);
 
 void carray_compute_strides(carray *a);
 
-size_t carray_compute_size(size_t ndim, const size_t *shape);
+size_t carray_compute_size(size_t ndim, size_t *shape);
 
+carray arange(size_t *shape, size_t ndim);
 
+void carray_print(carray *arr);
+
+carray init_carray_with_zeros(size_t *shape, size_t ndim);
+
+carray init_carray_with_ones(size_t *shape, size_t ndim);
 
 // int carray_create(carray *a, size_t ndim, const size_t *shape) {
 //     a->ndim = ndim;
