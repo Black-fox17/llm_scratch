@@ -23,23 +23,32 @@ class Position:
         return pe
         
     def rotary_positional_encoding(self):
-        rotated_sequences = []
-        def apply_rope(x, pos, d_model):
-            x_even = x[0::2]
-            x_odd = x[1::2]
+        d = self.d_model
+        seq_len = self.seq_len
+        X = self.X  # shape: (seq_len, d)
 
-            dim_indices = torch.arange(0, d_model, 2, device=x.device).float()
-            inv_freq = 1.0 / (10000 ** (dim_indices / d_model))
-            thetas = pos * inv_freq
-            cos = torch.cos(thetas)
-            sin = torch.sin(thetas)
-            x_rot_even = x_even * cos - x_odd * sin
-            x_rot_odd  = x_even * sin + x_odd * cos
-            out = torch.empty_like(x)
-            out[0::2] = x_rot_even
-            out[1::2] = x_rot_odd
-            return out
-        for p in range(self.seq_len):
-            rotated_vec = apply_rope(self.X, p, self.d_model)
-            rotated_sequences.append(rotated_vec)
-        return torch.stack(rotated_sequences)
+        dim = torch.arange(0, d, 2, device=X.device).float()
+        inv_freq = 1.0 / (10000 ** (dim / d))
+
+        out = []
+
+        for pos in range(seq_len):
+            x = X[pos]
+
+            x_even = x[0::2]
+            x_odd  = x[1::2]
+
+            theta = pos * inv_freq
+            cos = torch.cos(theta)
+            sin = torch.sin(theta)
+
+            rot_even = x_even * cos - x_odd * sin
+            rot_odd  = x_even * sin + x_odd * cos
+
+            x_rot = torch.empty_like(x)
+            x_rot[0::2] = rot_even
+            x_rot[1::2] = rot_odd
+
+            out.append(x_rot)
+
+        return torch.stack(out)
