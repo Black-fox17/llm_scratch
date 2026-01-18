@@ -1,55 +1,82 @@
+import torch
+import torch.nn.functional as F
 from models.stacked import StackedLSTM
 from data.batchloader import CharLMDataLoader
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
+import os
+from utils import init_state,sample
 
-data = CharLMDataLoader(
-    path='data/input.txt',
-    batch_size=50,
-    seq_len=50
-)
+def train():
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("device:", device)
 
-vocab_size = data.vocab_size
-hidden_size = 128
-num_layers = 2
-seq_len = 50
-batch_size = 50
-lr = 2e-3
-grad_clip = 5.0
+    data = CharLMDataLoader(
+        path="data/input.txt",
+        batch_size=64,
+        seq_len=64
+    )
 
-model = StackedLSTM(vocab_size, hidden_size, num_layers)
-params = model.parameters()
+    model = StackedLSTM(
+        vocab_size=data.vocab_size,
+        hidden_size=256,
+        num_layers=2,
+        device=device
+    )
 
-for epoch in range(20):
-    state = init_state(batch_size, hidden_size, num_layers)
+    optimizer = torch.optim.Adam(model.parameters(), lr=3e-4)
 
-    for step in range(1000):
-        x, y = data.next_train_batch()
+    epochs = 20
+    grad_clip = 1.0
 
-        loss = 0.0
-        states = [state]
+    prompts = ["The ", "Hello", "What ", "I "]
 
-        for t in range(seq_len):
-            logits, state = model(x[:, t], state)
-            loss += F.cross_entropy(logits, y[:, t])
-            states.append(state)
+    for epoch in range(epochs):
+        total_loss = 0.0
+        steps = 1000
 
-        loss /= seq_len
+        for step in range(steps):
+            x, y = data.next_train_batch()
+            x = x.to(device)
+            y = y.to(device)
 
-        for p in params:
-            if p.grad is not None:
-                p.grad.zero_()
+            state = init_state(x.size(0), model.hidden_size, model.num_layers, device)
 
-        loss.backward()
+            loss = 0.0
+            for t in range(x.size(1)):
+                logits, state = model(x[:, t], state)
+                loss += F.cross_entropy(logits, y[:, t])
 
-        for p in params:
-            p.grad.clamp_(-grad_clip, grad_clip)
+            loss /= x.size(1)
 
-        with torch.no_grad():
-            for p in params:
-                p -= lr * p.grad
+            optimizer.zero_grad()
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), grad_clip)
+            optimizer.step()
 
-        state = ([h.detach() for h in state[0]],
-                 [c.detach() for c in state[1]])
+            total_loss += loss.item()
 
-        if step % 100 == 0:
-            print(f"epoch {epoch} step {step} loss {loss.item():.4f}")
+            if step % 100 == 0:
+                print(f"epoch {epoch} step {step} loss {loss.item():.4f}")
+
+        avg_loss = total_loss / steps
+        print(f"\nEPOCH {epoch} avg loss {avg_loss:.4f}\n")
+
+        for p in prompts:
+            print(sample(model, data, p, device, greedy=True))
+
+        os.makedirs("checkpoints", exist_ok=True)
+        torch.save(
+            {
+                'epoch': epoch,
+                'model_state': {
+                    'embed': model.embed,
+                    'Wy': model.Wy,
+                    'by': model.by,
+                    'layers': [(l.W, l.b) for l in model.layers]
+                }
+            },
+            f"checkpoints/epoch_{epoch}.pt"
+        )
+
+
+if __name__ == "__main__":
+    train()
