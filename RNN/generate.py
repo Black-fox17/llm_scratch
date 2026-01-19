@@ -52,6 +52,6 @@ if __name__ == '__main__':
     
     for seed in seed_texts:
         print(f"Seed: '{seed}'")
-        generated = sample(model, data, seed, length=200, temperature=0.8)
+        generated = sample(model, data, seed, length=200, temperature=0, greedy=True)
         print(generated)
         print("\n")
