@@ -1,8 +1,8 @@
 from datasets import load_dataset
 import unicodedata
 
-def get_dataset():
-    return load_dataset("roneneldan/TinyStories")
+def get_dataset(dataset_name="roneneldan/TinyStories"):
+    return load_dataset(dataset_name)
 
 def clean_wikitext(text):
     text = text.replace("@-@", "-")
@@ -13,9 +13,9 @@ def clean_wikitext(text):
 
     return text
 
-def create_corpus(dataset):
+def create_corpus(dataset, num_samples=10000):
     train_corpus = []
-    for entry in dataset['train'].take(10000):
+    for entry in dataset['train'].take(num_samples):
         text = entry['text']
         if len(text.strip()) > 0:
             train_corpus.append(clean_wikitext(text))

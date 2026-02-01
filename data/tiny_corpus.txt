@@ -1,8 +1,0 @@
-# Tiny LLM Corpus
-This is a small placeholder for LLM training data.
-The quick brown fox jumps over the lazy dog.
-LLMs are fascinating.
-Attention is all you need.
-Tokenization is the first step.
-Backpropagation is the workhorse of deep learning.
-Transformers changed the world.
